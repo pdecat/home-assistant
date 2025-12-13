@@ -60,7 +60,13 @@ import zigpy.zdo.types as zdo_types
 
 from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_COMMAND, ATTR_ID, ATTR_NAME, Platform
+from homeassistant.const import (
+    ATTR_COMMAND,
+    ATTR_ENTITY_ID,
+    ATTR_ID,
+    ATTR_NAME,
+    Platform,
+)
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -501,6 +507,35 @@ async def websocket_get_group(
 
     group_info = zha_group.group_info
     connection.send_result(msg[ID], group_info)
+
+
+@websocket_api.require_admin
+@websocket_api.websocket_command(
+    {
+        vol.Required(TYPE): "zha/entity/read",
+        vol.Required(ATTR_ENTITY_ID): cv.entity_id,
+    }
+)
+@websocket_api.async_response
+async def websocket_read_entity(
+    hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Read ZHA entity attribute."""
+    zha_gateway_proxy = get_zha_gateway_proxy(hass)
+    entity_id: str = msg[ATTR_ENTITY_ID]
+
+    for refs in zha_gateway_proxy.ha_entity_refs.values():
+        for ref in refs:
+            if ref.ha_entity_id == entity_id:
+                await ref.entity_data.entity.async_update()
+                connection.send_result(msg[ID])
+                return
+
+    connection.send_message(
+        websocket_api.error_message(
+            msg[ID], websocket_api.ERR_NOT_FOUND, "Entity not found"
+        )
+    )
 
 
 @websocket_api.require_admin
@@ -1534,6 +1569,7 @@ def async_load_api(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_get_groups)
     websocket_api.async_register_command(hass, websocket_get_device)
     websocket_api.async_register_command(hass, websocket_get_group)
+    websocket_api.async_register_command(hass, websocket_read_entity)
     websocket_api.async_register_command(hass, websocket_add_group)
     websocket_api.async_register_command(hass, websocket_remove_groups)
     websocket_api.async_register_command(hass, websocket_add_group_members)
