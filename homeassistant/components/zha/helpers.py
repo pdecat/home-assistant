@@ -3,7 +3,7 @@
 import asyncio
 import collections
 from collections.abc import AsyncGenerator, Callable, Mapping
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 import copy
 import dataclasses
 import enum
@@ -102,6 +102,7 @@ from homeassistant.components.system_log import LogEntry
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_AREA_ID,
+    ATTR_BATTERY_LEVEL,
     ATTR_DEVICE_ID,
     ATTR_ENTITY_ID,
     ATTR_MANUFACTURER,
@@ -358,6 +359,16 @@ class ZHADeviceProxy(EventBase):
         """Return a device description for device."""
         info = self.device.device_info
         ieee = str(info.ieee)
+
+        battery_level = None
+        for entity_ref in self.gateway_proxy.ha_entity_refs[self.device.ieee]:
+            if (
+                state := self.gateway_proxy.hass.states.get(entity_ref.ha_entity_id)
+            ) and state.attributes.get("device_class") == "battery":
+                with suppress(ValueError, TypeError):
+                    battery_level = float(state.state)
+                    break
+
         return {
             ATTR_IEEE: ieee,
             ATTR_NWK: info.nwk,
@@ -375,6 +386,7 @@ class ZHADeviceProxy(EventBase):
             ATTR_AVAILABLE: info.available,
             ATTR_DEVICE_TYPE: info.device_type,
             ATTR_SIGNATURE: info.signature,
+            ATTR_BATTERY_LEVEL: battery_level,
         }
 
     @property
