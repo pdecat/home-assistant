@@ -1,7 +1,9 @@
 """Test ONVIF PTZ capabilities."""
 
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from pytest_homeassistant.common import MockConfigEntry
 
 from homeassistant.components.onvif.const import DOMAIN
@@ -124,3 +126,52 @@ async def test_ptz_continuous_move_does_not_call_stop_when_duration_zero(
     ptz_service.ContinuousMove.assert_awaited_once()
     ptz_service.Stop.assert_not_awaited()
     mock_sleep.assert_not_awaited()
+
+
+@pytest.mark.parametrize("move_mode", ["RelativeMove", "AbsoluteMove"])
+@pytest.mark.parametrize(
+    ("speed", "expected_speed"),
+    [
+        (None, None),
+        (0.5, {"PanTilt": {"x": 0.5, "y": 0.5}, "Zoom": {"x": 0.5}}),
+    ],
+)
+async def test_ptz_move_only_sends_speed_when_given(
+    hass: HomeAssistant,
+    move_mode: str,
+    speed: float | None,
+    expected_speed: dict | None,
+) -> None:
+    """Test RelativeMove and AbsoluteMove leave Speed out when none is given.
+
+    Speed is optional in the ONVIF request, but a Speed holding None values
+    fails zeep validation before anything is sent to the camera.
+    """
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+
+    with patch(
+        "homeassistant.components.onvif.device.ONVIFCamera"
+    ) as mock_onvif_camera_cls:
+        ptz_service = _setup_ptz_camera_mocks(mock_onvif_camera_cls)
+        ptz_service.create_type = MagicMock(
+            side_effect=lambda _: SimpleNamespace(Speed=None)
+        )
+        ptz_service.RelativeMove = AsyncMock()
+        ptz_service.AbsoluteMove = AsyncMock()
+
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        service_data = {
+            "entity_id": "camera.testcamera_mainstream",
+            "move_mode": move_mode,
+            "pan": "LEFT",
+        }
+        if speed is not None:
+            service_data["speed"] = speed
+        await hass.services.async_call(DOMAIN, "ptz", service_data, blocking=True)
+
+    move = getattr(ptz_service, move_mode)
+    move.assert_awaited_once()
+    assert move.await_args.args[0].Speed == expected_speed

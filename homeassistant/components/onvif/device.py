@@ -517,7 +517,7 @@ class ONVIFDevice:
         LOGGER.debug(
             (
                 "Calling %s PTZ | Pan = %4.2f | Tilt = %4.2f | Zoom = %4.2f | Speed ="
-                " %4.2f | Preset = %s"
+                " %s | Preset = %s"
             ),
             move_mode,
             pan_val,
@@ -569,10 +569,11 @@ class ONVIFDevice:
                     "PanTilt": {"x": pan_val, "y": tilt_val},
                     "Zoom": {"x": zoom_val},
                 }
-                req.Speed = {
-                    "PanTilt": {"x": speed_val, "y": speed_val},
-                    "Zoom": {"x": speed_val},
-                }
+                if speed_val is not None:
+                    req.Speed = {
+                        "PanTilt": {"x": speed_val, "y": speed_val},
+                        "Zoom": {"x": speed_val},
+                    }
                 await ptz_service.RelativeMove(req)
             elif move_mode == ABSOLUTE_MOVE:
                 # Guard against unsupported operation
@@ -586,10 +587,11 @@ class ONVIFDevice:
                     "PanTilt": {"x": pan_val, "y": tilt_val},
                     "Zoom": {"x": zoom_val},
                 }
-                req.Speed = {
-                    "PanTilt": {"x": speed_val, "y": speed_val},
-                    "Zoom": {"x": speed_val},
-                }
+                if speed_val is not None:
+                    req.Speed = {
+                        "PanTilt": {"x": speed_val, "y": speed_val},
+                        "Zoom": {"x": speed_val},
+                    }
                 await ptz_service.AbsoluteMove(req)
             elif move_mode == GOTOPRESET_MOVE:
                 # Guard against unsupported operation
