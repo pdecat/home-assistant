@@ -253,6 +253,9 @@
       "self_test": {
         "name": "Self-test"
       },
+      "start_zigbee_pairing": {
+        "name": "Start Zigbee pairing"
+      },
       "turn_off_the_screen": {
         "name": "Turn off the screen"
       },

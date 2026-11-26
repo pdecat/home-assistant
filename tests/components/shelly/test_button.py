@@ -574,3 +574,61 @@ async def test_rpc_ircode_button_no_custom_name(
     )
     assert main_device is not None
     assert ir_device.parent_device_id == main_device.id
+
+
+async def test_rpc_zigbee_start_pairing_button(
+    hass: HomeAssistant,
+    mock_rpc_device: Mock,
+    entity_registry: EntityRegistry,
+    monkeypatch: pytest.MonkeyPatch,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test RPC start Zigbee pairing button of a device on Zigbee firmware."""
+    monkeypatch.setitem(mock_rpc_device.config, "zigbee", {"enable": True})
+    monkeypatch.setitem(mock_rpc_device.status, "zigbee", {"network_state": "joined"})
+    await init_integration(hass, 4)
+
+    entity_id = "button.test_name_start_zigbee_pairing"
+
+    assert (state := hass.states.get(entity_id))
+    assert state == snapshot(name=f"{entity_id}-state")
+
+    assert (entry := entity_registry.async_get(entity_id))
+    assert entry == snapshot(name=f"{entity_id}-entry")
+
+    await hass.services.async_call(
+        BUTTON_DOMAIN,
+        ButtonService.PRESS,
+        {TargetKey.ENTITY_ID: entity_id},
+        blocking=True,
+    )
+    mock_rpc_device.call_rpc.assert_called_once_with(
+        "Zigbee.StartNetworkSteering", None
+    )
+
+
+async def test_rpc_zigbee_start_pairing_button_removed(
+    hass: HomeAssistant,
+    mock_rpc_device: Mock,
+    entity_registry: EntityRegistry,
+    device_registry: DeviceRegistry,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test RPC start Zigbee pairing button removal when Zigbee is disabled."""
+    config_entry = await init_integration(hass, 4, skip_setup=True)
+    device_entry = register_device(device_registry, config_entry)
+    entity_id = register_entity(
+        hass,
+        BUTTON_DOMAIN,
+        "test_name_start_zigbee_pairing",
+        "zigbee-network_steering",
+        config_entry,
+        device_id=device_entry.id,
+    )
+    monkeypatch.setitem(mock_rpc_device.config, "zigbee", {"enable": False})
+    monkeypatch.setitem(mock_rpc_device.status, "zigbee", {"network_state": "disabled"})
+
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entity_registry.async_get(entity_id) is None

@@ -400,6 +400,56 @@
     'state': 'unknown',
   })
 # ---
+# name: test_rpc_zigbee_start_pairing_button[button.test_name_start_zigbee_pairing-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('shelly', '123456789ABC')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.test_name_start_zigbee_pairing',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Start Zigbee pairing',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Start Zigbee pairing',
+    'platform': 'shelly',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'start_zigbee_pairing',
+    'unique_id': '123456789ABC-zigbee-network_steering',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_rpc_zigbee_start_pairing_button[button.test_name_start_zigbee_pairing-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Test name Start Zigbee pairing',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.test_name_start_zigbee_pairing',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
 # name: test_wall_display_screen_buttons[turn_off-False][button.test_name_turn_off_the_screen-entry]
   EntityRegistryEntrySnapshot({
     'aliases': list([

@@ -350,6 +350,17 @@ class RpcIrCodeButton(ShellyRpcAttributeEntity, ButtonEntity):
         await self.coordinator.device.ircode_emit(self._id)
 
 
+class RpcZigbeeNetworkSteeringButton(ShellyRpcAttributeEntity, ButtonEntity):
+    """Defines a Shelly RPC Zigbee network steering (pairing) button."""
+
+    entity_description: RpcButtonDescription
+
+    @override
+    async def async_press(self) -> None:
+        """Start Zigbee network steering."""
+        await self.call_rpc("Zigbee.StartNetworkSteering", None)
+
+
 class RpcSleepingSmokeMuteButton(ShellySleepingRpcAttributeEntity, ButtonEntity):
     """Defines a Shelly RPC Smoke mute alarm button."""
 
@@ -415,5 +426,13 @@ RPC_BUTTONS = (
         key="ircode",
         components=("ircode",),
         entity_class=RpcIrCodeButton,
+    ),
+    RpcButtonDescription(
+        key="network_steering",
+        components=("zigbee",),
+        translation_key="start_zigbee_pairing",
+        entity_category=EntityCategory.CONFIG,
+        removal_condition=lambda config, _, key: not config[key].get("enable", True),
+        entity_class=RpcZigbeeNetworkSteeringButton,
     ),
 )
